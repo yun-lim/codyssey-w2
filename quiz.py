@@ -263,6 +263,27 @@ class QuizGame:
             except ValueError:
                 print('    잘못된 입력입니다. 1-4 사이의 숫자를 입력하세요.')
 
+
+    def add_quiz(self):
+        """Add a new quiz question."""
+        print('\n    새로운 퀴즈를 추가합니다.\n')
+
+        question = self._get_text_input('    문제를 입력하세요: ')
+
+        choices = []
+        for i in range(1, 5):
+            choice = self._get_text_input(f'    선택지 {i}: ')
+            choices.append(choice)
+
+        answer = self._get_number_input('    정답 번호 (1-4): ', 1, 4)
+
+        hint_input = input('    힌트 (선택, 없으면 Enter): ').strip()
+
+        quiz = Quiz(question, choices, answer, hint=hint_input)
+        self.quizzes.append(quiz)
+        self.save_data()
+        print('\n    퀴즈가 추가되었습니다!')
+
     def run(self):
         """Main game loop."""
         try:
@@ -272,6 +293,8 @@ class QuizGame:
 
                 if choice == 1:
                     self.play_quiz()
+                elif choice == 2:
+                    self.add_quiz()
                 elif choice == 6:
                     self.save_data()
                     print('\n    게임을 종료합니다. 안녕히 가세요!')
