@@ -1,0 +1,12 @@
+"""Entry point for the console quiz game."""
+
+from quiz import QuizGame
+
+
+def main():
+    game = QuizGame()
+    game.run()
+
+
+if __name__ == '__main__':
+    main()
