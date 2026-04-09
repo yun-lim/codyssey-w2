@@ -52,6 +52,8 @@ DEFAULT_QUIZZES = [
     },
 ]
 
+
+class Quiz:
     """Represents a single quiz question with choices and an answer."""
 
     def __init__(self, question, choices, answer, hint=''):
@@ -92,3 +94,102 @@ DEFAULT_QUIZZES = [
             answer=data['answer'],
             hint=data.get('hint', ''),
         )
+
+
+class QuizGame:
+    """Manages the entire quiz game: menu, play, add, list, score, save/load."""
+
+    def __init__(self):
+        self.quizzes = []
+        self.best_score = None
+        self.score_history = []
+        self.load_data()
+
+    def load_data(self):
+        """Load quiz data from state.json. Use defaults if missing or corrupted."""
+        try:
+            with open(STATE_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            self.quizzes = [Quiz.from_dict(q) for q in data.get('quizzes', [])]
+            self.best_score = data.get('best_score', None)
+            self.score_history = data.get('score_history', [])
+            count = len(self.quizzes)
+            score_info = f', 최고점수 {self.best_score}점' if self.best_score is not None else ''
+            print(f'    저장된 데이터를 불러왔습니다. (퀴즈 {count}개{score_info})')
+        except FileNotFoundError:
+            self._load_defaults()
+            print('    저장 파일이 없어 기본 퀴즈 데이터를 사용합니다.')
+        except (json.JSONDecodeError, KeyError, TypeError):
+            self._load_defaults()
+            print('    저장 파일이 손상되어 기본 퀴즈 데이터로 초기화합니다.')
+
+    def _load_defaults(self):
+        """Load default quiz data."""
+        self.quizzes = [Quiz.from_dict(q) for q in DEFAULT_QUIZZES]
+        self.best_score = None
+        self.score_history = []
+
+    def save_data(self):
+        """Save quiz data to state.json."""
+        data = {
+            'quizzes': [q.to_dict() for q in self.quizzes],
+            'best_score': self.best_score,
+            'score_history': self.score_history,
+        }
+        try:
+            with open(STATE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+        except OSError as e:
+            print(f'\n    저장 중 오류가 발생했습니다: {e}')
+
+    def _get_number_input(self, prompt, min_val, max_val):
+        """Get validated number input from user within range."""
+        while True:
+            try:
+                raw = input(prompt).strip()
+                if not raw:
+                    print(f'    입력이 비어 있습니다. {min_val}-{max_val} 사이의 숫자를 입력하세요.')
+                    continue
+                num = int(raw)
+                if num < min_val or num > max_val:
+                    print(f'    잘못된 입력입니다. {min_val}-{max_val} 사이의 숫자를 입력하세요.')
+                    continue
+                return num
+            except ValueError:
+                print(f'    잘못된 입력입니다. {min_val}-{max_val} 사이의 숫자를 입력하세요.')
+
+    def _get_text_input(self, prompt):
+        """Get non-empty text input from user."""
+        while True:
+            raw = input(prompt).strip()
+            if raw:
+                return raw
+            print('    입력이 비어 있습니다. 다시 입력하세요.')
+
+    def show_menu(self):
+        """Display the main menu."""
+        print('\n    ========================================')
+        print('            나만의 퀴즈 게임')
+        print('    ========================================')
+        print('    1. 퀴즈 풀기')
+        print('    2. 퀴즈 추가')
+        print('    3. 퀴즈 목록')
+        print('    4. 점수 확인')
+        print('    5. 퀴즈 삭제')
+        print('    6. 종료')
+        print('    ========================================')
+
+    def run(self):
+        """Main game loop."""
+        try:
+            while True:
+                self.show_menu()
+                choice = self._get_number_input('    선택: ', 1, 6)
+
+                if choice == 6:
+                    self.save_data()
+                    print('\n    게임을 종료합니다. 안녕히 가세요!')
+                    break
+        except (KeyboardInterrupt, EOFError):
+            self.save_data()
+            print('\n\n    프로그램을 안전하게 종료합니다.')
